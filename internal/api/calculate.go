@@ -33,7 +33,7 @@ type calcReq struct {
 
 func Calculate(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		http.Error(w, "Метод не разрешён", http.StatusMethodNotAllowed)
 		return
 	}
 	fmt.Println("as_here0")
@@ -56,29 +56,43 @@ func worker(id int, input_first_param float64, input_second_param float64, param
 	var results []outputParam
 
 	for _, param := range params {
-		result_type_identifier := calculated_operation_probapility()
-		if almostEqual(result_type_identifier, -1.0) {
-			resultCalculating := "error"
-			result := outputParam{
-				CalculationID:    param.CalculationID,
-				OutputParam: result_type_identifier,
-				OutputErrorParam: resultCalculating,
+		if param.CalculationID != 2 && param.CalculationID != 3 && param.CalculationID != 4 {
+			result_type_identifier := calculated_operation_probapility()
+			if almostEqual(result_type_identifier, -1.0) {
+				resultCalculating := "error"
+				result := outputParam{
+					CalculationID:    param.CalculationID,
+					OutputParam:      result_type_identifier,
+					OutputErrorParam: resultCalculating,
+				}
+				results = append(results, result)
+				continue
 			}
-			results = append(results, result)
-		} else {
-
-			resultCalculating := result_type_identifier * input_first_param * input_second_param
-			fmt.Println(param.CalculationID)
-			fmt.Println(resultCalculating)
-
-			// Создаем новый элемент outputParam и добавляем в слайс results
-			result := outputParam{
-				CalculationID:    param.CalculationID,
-				OutputParam: resultCalculating,
-				OutputErrorParam: "",
-			}
-			results = append(results, result)
 		}
+
+		var resultCalculating float64
+
+		if param.CalculationID == 2 {
+			resultCalculating = float64(gcd(int(input_first_param), int(input_second_param)))
+		} else if param.CalculationID == 3 {
+			resultCalculating = float64(lcm(int(input_first_param), int(input_second_param)))
+		} else if param.CalculationID == 4 {
+			resultCalculating = math.Pow(input_first_param, 1/input_second_param)
+		} else {
+			result_type_identifier := calculated_operation_probapility()
+			resultCalculating = result_type_identifier * input_first_param * input_second_param
+		}
+
+		// fmt.Println(param.CalculationID)
+		// fmt.Println(resultCalculating)
+
+		// Создаем новый элемент outputParam и добавляем в слайс results
+		result := outputParam{
+			CalculationID:    param.CalculationID,
+			OutputParam:      resultCalculating,
+			OutputErrorParam: "",
+		}
+		results = append(results, result)
 	}
 	// fmt.Printf("Simulated Metro Load for %s: %d people\n", param.ModelID, resultLoading)
 
@@ -96,8 +110,8 @@ func worker(id int, input_first_param float64, input_second_param float64, param
 		return
 	}
 
-	postURL := "http://localhost:8000/api/applications/write_result_calculating/" 
-	// add /api/  and add /api/ in urls django
+	postURL := "http://localhost:8000/api/applications_calculations/write_result_calculating/" 
+
 
 	// Make the HTTP POST request
 	resp, err := http.Post(postURL, "application/json", bytes.NewBuffer(postBody))
@@ -124,4 +138,17 @@ func calculated_operation_probapility() float64 {
 
 func almostEqual(a float64, b float64) bool {
     return math.Abs(a - b) <= float64EqualityThreshold
+}
+
+// Функция для нахождения наибольшего общего делителя (НОД)
+func gcd(a, b int) int {
+	for b != 0 {
+		a, b = b, a%b
+	}
+	return a
+}
+
+// Функция для нахождения наименьшего общего кратного (НОК)
+func lcm(a, b int) int {
+	return a * b / gcd(a, b)
 }
